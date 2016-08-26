@@ -100,6 +100,9 @@ public class DropboxSynchronizer implements ManagedService {
     /** the configured AppSecret (optional, defaults to official Dropbox-App secret 'gu5v7lp1f5bbs07') */
     private static String appSecret = "gu5v7lp1f5bbs07";
 
+    /** the configured clientIdentifier (optional, defaults to official Dropbox-App name/version 'openHAB/1.0' */
+    private static String clientIdentifier = "openHAB/1.0";
+
     /** The default directory to download files from Dropbox to (currently '.') */
     private static final String DEFAULT_CONTENT_DIR = getConfigDirFolder();
 
@@ -150,7 +153,7 @@ public class DropboxSynchronizer implements ManagedService {
 
     private static final DbxAppInfo appInfo = new DbxAppInfo(DropboxSynchronizer.appKey, DropboxSynchronizer.appSecret);
 
-    private final static DbxRequestConfig requestConfig = new DbxRequestConfig("openHAB/1.0",
+    private final static DbxRequestConfig requestConfig = new DbxRequestConfig(DropboxSynchronizer.clientIdentifier,
             Locale.getDefault().toString());
 
     public void activate() {
@@ -186,10 +189,10 @@ public class DropboxSynchronizer implements ManagedService {
     /**
      * Starts the OAuth authorization process with Dropbox. The authorization
      * process is a multi step process which is described in the Wiki in detail.
-     * 
+     *
      * @throws DbxException if there are technical or application level errors
      *             in the Dropbox communication
-     * 
+     *
      * @see <a href="https://github.com/openhab/openhab/wiki/Dropbox-IO">openHAB Dropbox IO Wiki</a>
      */
     public void startAuthentication() throws DbxException {
@@ -208,10 +211,10 @@ public class DropboxSynchronizer implements ManagedService {
      * Finishes the OAuth authorization process by taking the given {@code token} and creating
      * an accessToken out of it. The authorization process is a multi step process which is
      * described in the Wiki in detail.
-     * 
+     *
      * @throws DbxException if there are technical or application level errors
      *             in the Dropbox communication
-     * 
+     *
      * @see <a href="https://github.com/openhab/openhab/wiki/Dropbox-IO">openHAB Dropbox IO Wiki</a>
      */
     public void finishAuthentication(String code) throws DbxException {
@@ -233,10 +236,10 @@ public class DropboxSynchronizer implements ManagedService {
      * tries to recreate it from the file <code>deltacursor.dbx</code>. If
      * it is still <code>null</code> all files are downloaded from the specified
      * location.
-     * 
+     *
      * Note: Since we define Dropbox as data master we do not care about local
      * changes while downloading files!
-     * 
+     *
      * @throws DbxException if there are technical or application level
      *             errors in the Dropbox communication
      * @throws IOException
@@ -291,7 +294,7 @@ public class DropboxSynchronizer implements ManagedService {
      * are identified by the files' <code>lastModified</code> attribut. If there
      * are less files locally the additional files will be deleted from the
      * Dropbox. New files will be uploaded or overwritten if they exist already.
-     * 
+     *
      * @throws DbxException if there are technical or application level
      *             errors in the Dropbox communication
      * @throws IOException
@@ -471,7 +474,7 @@ public class DropboxSynchronizer implements ManagedService {
             if (file.isDirectory()) {
                 collectLocalEntries(localEntries, file.getPath());
             } else {
-                //if we are on a Windows filesystem we need to change the separator for dropbox
+                // if we are on a Windows filesystem we need to change the separator for dropbox
                 if (isWindows()) {
                     normalizedPath = normalizedPath.replace('\\', '/');
                 }
@@ -496,10 +499,10 @@ public class DropboxSynchronizer implements ManagedService {
      * TODO: TEE: Currently there is now way to change the attribute
      * 'lastModified' of the files to upload via Dropbox API. See the
      * discussion below for more details.
-     * 
+     *
      * Since this is a missing feature (from my point of view) we should
      * check the improvements of the API development on regular basis.
-     * 
+     *
      * @see http://forums.dropbox.com/topic.php?id=22347
      */
     private void uploadFile(DbxClient client, String dropboxPath, boolean overwrite) throws DbxException, IOException {
@@ -611,6 +614,11 @@ public class DropboxSynchronizer implements ManagedService {
                         "The parameters 'appkey' or 'appsecret' are missing! Please refer to your 'openhab.cfg'");
             }
 
+            String clientIdentifierString = (String) config.get("clientid");
+            if (isNotBlank(clientIdentifierString)) {
+                DropboxSynchronizer.clientIdentifier = clientIdentifierString;
+            }
+
             String fakeModeString = (String) config.get("fakemode");
             if (isNotBlank(fakeModeString)) {
                 DropboxSynchronizer.fakeMode = BooleanUtils.toBoolean(fakeModeString);
@@ -707,7 +715,7 @@ public class DropboxSynchronizer implements ManagedService {
      * Schedules either a job handling the Upload (<code>LOCAL_TO_DROPBOX</code>)
      * or Download (<code>DROPBOX_TO_LOCAL</code>) direction depending on
      * <code>isUpload</code>.
-     * 
+     *
      * @param interval the Trigger interval as cron expression
      * @param isUpload
      */
@@ -783,7 +791,7 @@ public class DropboxSynchronizer implements ManagedService {
         /**
          * Creates and returns a new {@link DbxClient} initialized with the store access token.
          * Returns {@code null} if no access token has been found.
-         * 
+         *
          * @return a new {@link DbxClient} or <code>null</code> if no access token has been found.
          */
         private DbxClient getClient(DropboxSynchronizer synchronizer) {
